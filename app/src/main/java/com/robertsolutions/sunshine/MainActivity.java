@@ -60,13 +60,13 @@ public class MainActivity extends ActionBarActivity {
         }
     }
 
-    public class FetchWeatherTask extends AsyncTask<String, Void, Void> {
+    public class FetchWeatherTask extends AsyncTask<String, Void, String[]> {
 
         private final String LOG_TAG = FetchWeatherTask.class.getSimpleName();
 
 
         @Override
-        protected Void doInBackground(String... param) {
+        protected String[] doInBackground(String... param) {
             // These two need to be declared outside the try/catch
             // so that they can be closed in the finally block.
 
@@ -77,7 +77,8 @@ public class MainActivity extends ActionBarActivity {
             String city = param[0];
             String mode = "json";
             String units = "metric";
-            String days = "7";
+            int days = 7;
+            String[] weekForecast = new String[0];
 
             uriBuilder.scheme("http")
                     .authority("api.openweathermap.org")
@@ -85,7 +86,7 @@ public class MainActivity extends ActionBarActivity {
                     .appendQueryParameter("q", city)
                     .appendQueryParameter("mode", mode)
                     .appendQueryParameter("units", units)
-                    .appendQueryParameter("cnt", days);
+                    .appendQueryParameter("cnt", String.valueOf(days));
 
             String myUrl = uriBuilder.build().toString();
 
@@ -127,12 +128,17 @@ public class MainActivity extends ActionBarActivity {
                     return null;
                 }
                 forecastJsonStr = buffer.toString();
+
+                weekForecast = getWeatherDataFromJson(forecastJsonStr,days);
+
                 Log.v(LOG_TAG, "Forecast JSON string: " + forecastJsonStr);
             } catch (IOException e) {
                 Log.e(LOG_TAG, "Error ", e);
                 // If the code didn't successfully get the weather data, there's no point in attemping
                 // to parse it.
                 return null;
+            } catch (JSONException e) {
+                e.printStackTrace();
             } finally {
                 if (urlConnection != null) {
                     urlConnection.disconnect();
@@ -145,7 +151,7 @@ public class MainActivity extends ActionBarActivity {
                     }
                 }
             }
-            return null;
+            return weekForecast;
         }
 
 //        public double getMaxTemperatureForDay(String weatherJsonStr, int dayIndex)
