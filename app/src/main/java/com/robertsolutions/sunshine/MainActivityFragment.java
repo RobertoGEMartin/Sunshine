@@ -1,5 +1,6 @@
 package com.robertsolutions.sunshine;
 
+import android.content.Intent;
 import android.net.Uri;
 import android.os.AsyncTask;
 import android.os.Bundle;
@@ -12,6 +13,7 @@ import android.view.MenuInflater;
 import android.view.MenuItem;
 import android.view.View;
 import android.view.ViewGroup;
+import android.widget.AdapterView;
 import android.widget.ArrayAdapter;
 import android.widget.ListView;
 
@@ -39,6 +41,7 @@ public class MainActivityFragment extends Fragment {
     private static final String TAG = "Sunshine";
 
     private  ArrayAdapter<String> mForecastAdapter;
+
 
 
     public MainActivityFragment() {
@@ -91,6 +94,25 @@ public class MainActivityFragment extends Fragment {
 
         mListView.setAdapter(mForecastAdapter);
 
+        mListView.setOnItemClickListener(new AdapterView.OnItemClickListener() {
+            @Override
+            public void onItemClick(AdapterView<?> parent, View view, int position, long id) {
+                String forecast = mForecastAdapter.getItem(position);
+//                int duration = Toast.LENGTH_SHORT;
+//                Toast toast = Toast.makeText(getActivity(), forecast, duration);
+//                toast.show();
+
+                try {
+                    Intent intent = new Intent(getActivity(), DetailActivity.class);
+                    intent.putExtra(Intent.EXTRA_TEXT, forecast);
+                    startActivity(intent);
+                } catch (Exception e) {
+                    e.printStackTrace();
+                } finally {
+                }
+            }
+        });
+
 
         return rootView;
     }
@@ -111,13 +133,13 @@ public class MainActivityFragment extends Fragment {
         // Handle item selection
         switch (id) {
             case R.id.action_refresh:
-                //TODO
                 String city = "Madrid";
                 FetchWeatherTask fwt = new FetchWeatherTask();
                 fwt.execute(city);
                 return true;
             case R.id.action_settings:
-                //TODO
+                Intent intent = new Intent(getActivity(), SettingsActivity.class);
+                startActivity(intent);
                 return true;
             default:
                 return super.onOptionsItemSelected(item);
@@ -130,16 +152,15 @@ public class MainActivityFragment extends Fragment {
 
 
         @Override
-        protected void onPostExecute(String[] forecastArray) {
-            super.onPostExecute(forecastArray);
+        protected void onPostExecute(String[] result) {
+            super.onPostExecute(result);
 
-            List<String> weekForecast = new ArrayList<String>(
-                    Arrays.asList(forecastArray)
-            );
-            mForecastAdapter.clear();
-            //mForecastAdapter.addAll(weekForecast);
-            for (int i = 0; i < weekForecast.size(); i++) {
-                mForecastAdapter.add(weekForecast.get(i));
+            if (result != null) {
+
+                mForecastAdapter.clear();
+                for (String day : result) {
+                    mForecastAdapter.add(day);
+                }
             }
 
         }
@@ -208,7 +229,7 @@ public class MainActivityFragment extends Fragment {
                 }
                 forecastJsonStr = buffer.toString();
 
-                weekForecast = getWeatherDataFromJson(forecastJsonStr,days);
+                weekForecast = getWeatherDataFromJson(forecastJsonStr, days);
 
                 Log.v(LOG_TAG, "Forecast JSON string: " + forecastJsonStr);
             } catch (IOException e) {
