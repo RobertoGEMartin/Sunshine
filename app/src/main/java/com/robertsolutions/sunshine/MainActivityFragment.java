@@ -1,9 +1,11 @@
 package com.robertsolutions.sunshine;
 
 import android.content.Intent;
+import android.content.SharedPreferences;
 import android.net.Uri;
 import android.os.AsyncTask;
 import android.os.Bundle;
+import android.preference.PreferenceManager;
 import android.support.v4.app.Fragment;
 import android.text.format.Time;
 import android.util.Log;
@@ -118,6 +120,12 @@ public class MainActivityFragment extends Fragment {
     }
 
     @Override
+    public void onStart() {
+        super.onStart();
+        updateWeather();
+    }
+
+    @Override
     public void onCreateOptionsMenu (Menu menu, MenuInflater inflater){
         inflater.inflate(R.menu.forecast_fragment, menu);
 
@@ -130,20 +138,46 @@ public class MainActivityFragment extends Fragment {
         // automatically handle clicks on the Home/Up button, so long
         // as you specify a parent activity in AndroidManifest.xml.
         int id = item.getItemId();
+        Intent intent;
         // Handle item selection
         switch (id) {
             case R.id.action_refresh:
-                String city = "Madrid";
-                FetchWeatherTask fwt = new FetchWeatherTask();
-                fwt.execute(city);
+                updateWeather();
                 return true;
             case R.id.action_settings:
-                Intent intent = new Intent(getActivity(), SettingsActivity.class);
+                 intent = new Intent(getActivity(), SettingsActivity.class);
                 startActivity(intent);
+            case R.id.action_map:
+                showMap();
                 return true;
             default:
                 return super.onOptionsItemSelected(item);
         }
+    }
+
+    public void showMap() {
+
+        SharedPreferences sp = PreferenceManager.getDefaultSharedPreferences(getActivity());
+        String city = sp.getString("pref_location_key", "Madrid");
+        Uri uriGeo = Uri.parse("geo:0,0?").buildUpon()
+                .appendQueryParameter("q", city)
+                .build();
+
+        String myUrl = uriGeo.toString();
+
+        Intent intent = new Intent(Intent.ACTION_VIEW);
+        intent.setData(uriGeo);
+        if (intent.resolveActivity(getActivity().getPackageManager()) != null) {
+            startActivity(intent);
+        }
+    }
+
+    public void updateWeather()
+    {
+        SharedPreferences sp = PreferenceManager.getDefaultSharedPreferences(getActivity());
+        String city = sp.getString("pref_location_key","Madrid");
+        FetchWeatherTask fwt = new FetchWeatherTask();
+        fwt.execute(city);
     }
 
     public class FetchWeatherTask extends AsyncTask<String, Void, String[]> {
@@ -154,6 +188,16 @@ public class MainActivityFragment extends Fragment {
         @Override
         protected void onPostExecute(String[] result) {
             super.onPostExecute(result);
+
+            SharedPreferences sp = PreferenceManager.getDefaultSharedPreferences(getActivity());
+            String units = sp.getString("pref_temp_key","Metric");
+            if(units == "imperial")
+            {
+                /*
+                TODO
+                Convert metric to imperial inside result
+                */
+            }
 
             if (result != null) {
 
@@ -173,10 +217,14 @@ public class MainActivityFragment extends Fragment {
             HttpURLConnection urlConnection = null;
             BufferedReader reader = null;
 
+
             Uri.Builder uriBuilder = new Uri.Builder();
             String city = param[0];
             String mode = "json";
-            String units = "metric";
+
+            SharedPreferences sp = PreferenceManager.getDefaultSharedPreferences(getActivity());
+            String units = sp.getString("pref_temp_key","Metric");
+
             int days = 7;
             String[] weekForecast = new String[0];
 
