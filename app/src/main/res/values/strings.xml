@@ -23,6 +23,7 @@
     <!-- Example settings for Temp -->
 
     <string name="action_map">Map</string>
+    <string name="action_share">Share</string>
 
     <string name="pref_title_temp_settings">Units</string>
 
